@@ -6,7 +6,9 @@ const {
   LoggerLevel,
   ObjectId,
 } = require("mongodb");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
+
 const app = express();
 const port = process.env.PORT || 5000;
 // middleware
@@ -19,6 +21,22 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+// jsonwebtoken verification function
+const tokenVerify = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res.status(401).send({ message: "UnAuthorization access" });
+  }
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, process.env.JSON_WEB_TOKEN, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 async function run() {
   try {
     await client.connect();
@@ -26,6 +44,7 @@ async function run() {
     const partsCollection = client.db("bicycleParts").collection("parts");
     const reviewsCollection = client.db("bicycleParts").collection("reviews");
     const ordersCollection = client.db("bicycleParts").collection("orders");
+    const usersCollection = client.db("bicycleParts").collection("users");
     // load tools data
     app.get("/tools", async (req, res) => {
       const query = {};
@@ -41,20 +60,34 @@ async function run() {
       res.send(result);
     });
     // get purchase data api
-    app.get("/purchase/:id", async (req, res) => {
+    app.get("/purchase/:id", tokenVerify, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await partsCollection.findOne(query);
       res.send(result);
     });
     // stored order data api
-    app.post("/orders", async (req, res) => {
+    app.post("/orders", tokenVerify, async (req, res) => {
       const order = req.body;
       const result = await ordersCollection.insertOne(order);
       res.send(result);
     });
+    //get orders data api
+    app.get("/orders", async (req, res) => {
+      const query = {};
+      const cursor = ordersCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    // cancel order api data
+    app.delete("/order/:id", tokenVerify, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await ordersCollection.deleteOne(query);
+      res.send(result);
+    });
     // update parts available data api
-    app.patch("/purchase/:id", async (req, res) => {
+    app.patch("/purchase/:id", tokenVerify, async (req, res) => {
       const id = req.params.id;
       const available = req.body.available;
       const filter = { _id: ObjectId(id) };
@@ -65,6 +98,27 @@ async function run() {
       };
       const update = await partsCollection.updateOne(filter, updateDoc);
       res.send(update);
+    });
+    // users api data
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+      const token = jwt.sign({ email: email }, process.env.JSON_WEB_TOKEN, {
+        expiresIn: "1d",
+      });
+      const updateDoc = {
+        $set: {
+          user,
+        },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send({ result, token: token });
     });
   } finally {
     //
