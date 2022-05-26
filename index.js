@@ -45,6 +45,18 @@ async function run() {
     const reviewsCollection = client.db("bicycleParts").collection("reviews");
     const ordersCollection = client.db("bicycleParts").collection("orders");
     const usersCollection = client.db("bicycleParts").collection("users");
+
+    // middleware
+    const adminVerify = async (req, res, next) => {
+      const requester = req.decoded.email;
+      const requesterUser = await usersCollection.findOne({ email: requester });
+      const requestAccount = requesterUser.role === "admin";
+      if (requestAccount) {
+        next();
+      } else {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+    };
     // load tools data
     app.get("/tools", async (req, res) => {
       const query = {};
@@ -57,6 +69,12 @@ async function run() {
       const query = {};
       const cursor = reviewsCollection.find(query);
       const result = await cursor.toArray();
+      res.send(result);
+    });
+    //post reviews api data
+    app.post("/reviews", tokenVerify, async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
       res.send(result);
     });
     // get purchase data api
@@ -72,12 +90,18 @@ async function run() {
       const result = await ordersCollection.insertOne(order);
       res.send(result);
     });
-    //get orders data api
-    app.get("/orders", async (req, res) => {
-      const query = {};
-      const cursor = ordersCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
+    // data load for dashboard/myAppointment table
+    app.get("/orders", tokenVerify, async (req, res) => {
+      const email = req.query.email;
+      const query = { userEmail: email };
+      const authEmail = req.decoded.email;
+      if (email === authEmail) {
+        const cursor = ordersCollection.find(query);
+        const orders = await cursor.toArray();
+        return res.send(orders);
+      } else {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
     });
     // cancel order api data
     app.delete("/order/:id", tokenVerify, async (req, res) => {
@@ -85,6 +109,13 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const result = await ordersCollection.deleteOne(query);
       res.send(result);
+    });
+    // secure admin panel
+    app.get("/admin/:email", tokenVerify, async (req, res) => {
+      const email = req.params.email;
+      const result = await usersCollection.findOne({ email: email });
+      const isAdmin = result.role === "admin";
+      res.send({ admin: isAdmin });
     });
     // update parts available data api
     app.patch("/purchase/:id", tokenVerify, async (req, res) => {
@@ -110,7 +141,7 @@ async function run() {
       });
       const updateDoc = {
         $set: {
-          user,
+          email: user.email,
         },
       };
       const result = await usersCollection.updateOne(
