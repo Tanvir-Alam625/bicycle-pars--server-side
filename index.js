@@ -7,6 +7,7 @@ const {
   ObjectId,
 } = require("mongodb");
 const jwt = require("jsonwebtoken");
+const res = require("express/lib/response");
 require("dotenv").config();
 
 const app = express();
@@ -45,6 +46,7 @@ async function run() {
     const reviewsCollection = client.db("bicycleParts").collection("reviews");
     const ordersCollection = client.db("bicycleParts").collection("orders");
     const usersCollection = client.db("bicycleParts").collection("users");
+    const profileCollection = client.db("bicycleParts").collection("profile");
 
     // middleware
     const adminVerify = async (req, res, next) => {
@@ -129,6 +131,37 @@ async function run() {
       };
       const update = await partsCollection.updateOne(filter, updateDoc);
       res.send(update);
+    });
+    // load profile data
+    app.get("/profile/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      console.log(query);
+      const result = await profileCollection.findOne({ email: email });
+      res.send(result);
+    });
+    //user info update api
+    app.put("/profile/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const user = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          name: user.name,
+          email: user.email,
+          country: user.country,
+          city: user.city,
+          img: user.img,
+          location: user.location,
+        },
+      };
+      const result = await profileCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
     });
     // users api data
     app.put("/user/:email", async (req, res) => {
