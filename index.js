@@ -9,6 +9,7 @@ const {
 const jwt = require("jsonwebtoken");
 const res = require("express/lib/response");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET);
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -73,6 +74,22 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    // payment intent api data
+    app.post("/create-payment-intent", tokenVerify, async (req, res) => {
+      const orderData = req.body;
+      const price = orderData.price;
+      const amount = price * 100;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
     //post reviews api data
     app.post("/reviews", tokenVerify, async (req, res) => {
       const review = req.body;
@@ -112,6 +129,13 @@ async function run() {
       const result = await ordersCollection.deleteOne(query);
       res.send(result);
     });
+    // cancel order api data
+    app.get("/order/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await ordersCollection.findOne(query);
+      res.send(result);
+    });
     // secure admin panel
     app.get("/admin/:email", tokenVerify, async (req, res) => {
       const email = req.params.email;
@@ -135,8 +159,6 @@ async function run() {
     // load profile data
     app.get("/profile/:email", async (req, res) => {
       const email = req.params.email;
-      const query = { email: email };
-      console.log(query);
       const result = await profileCollection.findOne({ email: email });
       res.send(result);
     });
