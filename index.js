@@ -67,6 +67,12 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    app.post("/tools", tokenVerify, adminVerify, async (req, res) => {
+      const tool = req.body;
+      const result = await partsCollection.insertOne(tool);
+      res.send(result);
+    });
+
     // get reviews data api
     app.get("/reviews", async (req, res) => {
       const query = {};
@@ -224,6 +230,42 @@ async function run() {
       );
       res.send(result);
     });
+    // get user api data
+    app.get("/users", tokenVerify, adminVerify, async (req, res) => {
+      const users = await usersCollection.find().toArray();
+      res.send(users);
+    });
+    //make admin api data
+    app.patch("/makeAdmin/:id", tokenVerify, adminVerify, async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const role = req.body.role;
+      const updateDoc = {
+        $set: {
+          role: role,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    //remove admin api data
+    app.patch(
+      "/removeAdmin/:id",
+      tokenVerify,
+      adminVerify,
+      async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const role = req.body.role;
+        const updateDoc = {
+          $set: {
+            role: role,
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+    );
     // users api data
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
