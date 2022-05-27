@@ -93,8 +93,10 @@ async function run() {
     // order data update after pay
     app.patch("/orderPay/:id", tokenVerify, async (req, res) => {
       const id = req.params.id;
+      console.log(req.body);
       const transactionId = req.body.transactionId;
       const filter = { _id: ObjectId(id) };
+      console.log(transactionId);
       const updateDoc = {
         $set: {
           paid: true,
@@ -150,8 +152,25 @@ async function run() {
       const result = await ordersCollection.findOne(query);
       res.send(result);
     });
+    app.patch(
+      "/orderShipment/:id",
+      tokenVerify,
+      adminVerify,
+      async (req, res) => {
+        const id = req.params.id;
+        const shipment = req.body.shipment;
+        const filter = { _id: ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            shipment: shipment,
+          },
+        };
+        const result = await ordersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      }
+    );
     // manageOrders api data
-    app.get("/manageOrders", tokenVerify, async (req, res) => {
+    app.get("/manageOrders", tokenVerify, adminVerify, async (req, res) => {
       const query = {};
       const result = await ordersCollection.find(query).toArray();
       res.send(result);
