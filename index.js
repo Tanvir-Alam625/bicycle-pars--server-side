@@ -150,6 +150,12 @@ async function run() {
       const result = await ordersCollection.findOne(query);
       res.send(result);
     });
+    // manageOrders api data
+    app.get("/manageOrders", tokenVerify, async (req, res) => {
+      const query = {};
+      const result = await ordersCollection.find(query).toArray();
+      res.send(result);
+    });
     // secure admin panel
     app.get("/admin/:email", tokenVerify, async (req, res) => {
       const email = req.params.email;
