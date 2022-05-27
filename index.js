@@ -90,6 +90,20 @@ async function run() {
         clientSecret: paymentIntent.client_secret,
       });
     });
+    // order data update after pay
+    app.patch("/orderPay/:id", tokenVerify, async (req, res) => {
+      const id = req.params.id;
+      const transactionId = req.body.transactionId;
+      const filter = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          paid: true,
+          transactionId: transactionId,
+        },
+      };
+      const result = await ordersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
     //post reviews api data
     app.post("/reviews", tokenVerify, async (req, res) => {
       const review = req.body;
