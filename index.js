@@ -75,10 +75,40 @@ async function run() {
     });
 
     // delete product data api
-    app.delete("/tool/:id", tokenVerify, async (req, res) => {
+    app.delete("/tool/:id", tokenVerify, adminVerify, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await partsCollection.deleteOne(query);
+      res.send(result);
+    });
+    // delete product data api
+    app.get("/tool/:id", tokenVerify, adminVerify, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await partsCollection.findOne(query);
+      res.send(result);
+    });
+    //user info update api
+    app.put("/tool/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const tool = req.body;
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          name: tool.name,
+          price: tool.price,
+          minimumQuantity: tool.minimumQuantity,
+          available: tool.available,
+          img: tool.img,
+          description: tool.description,
+        },
+      };
+      const result = await partsCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.send(result);
     });
     // get reviews data api
