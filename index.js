@@ -67,12 +67,20 @@ async function run() {
       const result = await cursor.toArray();
       res.send(result);
     });
+    // insert product data api
     app.post("/tools", tokenVerify, adminVerify, async (req, res) => {
       const tool = req.body;
       const result = await partsCollection.insertOne(tool);
       res.send(result);
     });
 
+    // delete product data api
+    app.delete("/tool/:id", tokenVerify, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await partsCollection.deleteOne(query);
+      res.send(result);
+    });
     // get reviews data api
     app.get("/reviews", async (req, res) => {
       const query = {};
