@@ -140,7 +140,6 @@ async function run() {
       console.log(req.body);
       const transactionId = req.body.transactionId;
       const filter = { _id: ObjectId(id) };
-      console.log(transactionId);
       const updateDoc = {
         $set: {
           paid: true,
