@@ -69,21 +69,21 @@ async function run() {
       res.send(result);
     });
     // insert product data api
-    app.post("/tools", tokenVerify, adminVerify, async (req, res) => {
+    app.post("/tools", adminVerify, async (req, res) => {
       const tool = req.body;
       const result = await partsCollection.insertOne(tool);
       res.send(result);
     });
 
     // delete product data api
-    app.delete("/tool/:id", tokenVerify, adminVerify, async (req, res) => {
+    app.delete("/tool/:id", adminVerify, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await partsCollection.deleteOne(query);
       res.send(result);
     });
     // delete product data api
-    app.get("/tool/:id", tokenVerify, adminVerify, async (req, res) => {
+    app.get("/tool/:id",  adminVerify, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await partsCollection.findOne(query);
@@ -121,7 +121,7 @@ async function run() {
     });
 
     // payment intent api data
-    app.post("/create-payment-intent", tokenVerify, async (req, res) => {
+    app.post("/create-payment-intent",  async (req, res) => {
       const orderData = req.body;
       const price = orderData.price;
       const amount = price * 100;
@@ -136,7 +136,7 @@ async function run() {
       });
     });
     // order data update after pay
-    app.patch("/orderPay/:id", tokenVerify, async (req, res) => {
+    app.patch("/orderPay/:id", async (req, res) => {
       const id = req.params.id;
       console.log(req.body);
       const transactionId = req.body.transactionId;
@@ -151,39 +151,39 @@ async function run() {
       res.send(result);
     });
     //post reviews api data
-    app.post("/reviews", tokenVerify, async (req, res) => {
+    app.post("/reviews", async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
       res.send(result);
     });
     // get purchase data api
-    app.get("/purchase/:id", tokenVerify, async (req, res) => {
+    app.get("/purchase/:id",  async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await partsCollection.findOne(query);
       res.send(result);
     });
     // stored order data api
-    app.post("/orders", tokenVerify, async (req, res) => {
+    app.post("/orders",  async (req, res) => {
       const order = req.body;
       const result = await ordersCollection.insertOne(order);
       res.send(result);
     });
     // data load for dashboard/myAppointment table
-    app.get("/orders", tokenVerify, async (req, res) => {
+    app.get("/orders",  async (req, res) => {
       const email = req.query.email;
       const query = { userEmail: email };
-      const authEmail = req.decoded.email;
-      if (email === authEmail) {
+      // const authEmail = req.decoded.email;
+      // if (email === authEmail) {
         const cursor = ordersCollection.find(query);
         const orders = await cursor.toArray();
         return res.send(orders);
-      } else {
-        return res.status(403).send({ message: "Forbidden access" });
-      }
+      // } else {
+      //   return res.status(403).send({ message: "Forbidden access" });
+      // }
     });
     // cancel order api data
-    app.delete("/order/:id", tokenVerify, async (req, res) => {
+    app.delete("/order/:id",  async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await ordersCollection.deleteOne(query);
@@ -198,7 +198,6 @@ async function run() {
     });
     app.patch(
       "/orderShipment/:id",
-      tokenVerify,
       adminVerify,
       async (req, res) => {
         const id = req.params.id;
@@ -214,20 +213,20 @@ async function run() {
       }
     );
     // manageOrders api data
-    app.get("/manageOrders", tokenVerify, adminVerify, async (req, res) => {
+    app.get("/manageOrders", adminVerify, async (req, res) => {
       const query = {};
       const result = await ordersCollection.find(query).toArray();
       res.send(result);
     });
     // secure admin panel
-    app.get("/admin/:email", tokenVerify, async (req, res) => {
+    app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email: email });
       const isAdmin = result.role === "admin";
       res.send({ admin: isAdmin });
     });
     // update parts available data api
-    app.patch("/purchase/:id", tokenVerify, async (req, res) => {
+    app.patch("/purchase/:id", async (req, res) => {
       const id = req.params.id;
       const available = req.body.available;
       const filter = { _id: ObjectId(id) };
@@ -269,12 +268,12 @@ async function run() {
       res.send(result);
     });
     // get user api data
-    app.get("/users", tokenVerify, adminVerify, async (req, res) => {
+    app.get("/users", adminVerify, async (req, res) => {
       const users = await usersCollection.find().toArray();
       res.send(users);
     });
     //make admin api data
-    app.patch("/makeAdmin/:id", tokenVerify, adminVerify, async (req, res) => {
+    app.patch("/makeAdmin/:id",  adminVerify, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: ObjectId(id) };
       const role = req.body.role;
