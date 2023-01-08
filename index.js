@@ -49,18 +49,26 @@ async function run() {
     const ordersCollection = client.db("bicycleParts").collection("orders");
     const usersCollection = client.db("bicycleParts").collection("users");
     const profileCollection = client.db("bicycleParts").collection("profile");
+    // bangladesh area collecitons 
+    const divisionCollection = client.db("bangladeshArea").collection("divisions");
+    const districtCollection = client.db("bangladeshArea").collection("districts");
+    const upazilaCollection = client.db("bangladeshArea").collection("upazilas");
+    const unionCollection = client.db("bangladeshArea").collection("unions");
+    const zipcodeCollection = client.db("bangladeshArea").collection("zipcodes");
 
-    // middleware
+    //  admin middleware
     const adminVerify = async (req, res, next) => {
-      const requester = req.decoded.email;
+      
+      const requester =req.params.email;
       const requesterUser = await usersCollection.findOne({ email: requester });
-      const requestAccount = requesterUser.role === "admin";
+
+      const requestAccount = requesterUser?.role === "admin";
       if (requestAccount) {
         next();
       } else {
         return res.status(403).send({ message: "Forbidden Access" });
       }
-    };
+    }
     // load tools data
     app.get("/tools", async (req, res) => {
       const query = {};
@@ -69,21 +77,21 @@ async function run() {
       res.send(result);
     });
     // insert product data api
-    app.post("/tools", adminVerify, async (req, res) => {
+    app.post("/tools/:email", adminVerify, async (req, res) => {
       const tool = req.body;
       const result = await partsCollection.insertOne(tool);
       res.send(result);
     });
 
     // delete product data api
-    app.delete("/tool/:id", adminVerify, async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) };
-      const result = await partsCollection.deleteOne(query);
-      res.send(result);
-    });
+    // app.delete("/tool/:id/:email", adminVerify, async (req, res) => {
+    //   const id = req.params.id;
+    //   const query = { _id: ObjectId(id) };
+    //   const result = await partsCollection.deleteOne(query);
+    //   res.send(result);
+    // });
     // delete product data api
-    app.get("/tool/:id",  adminVerify, async (req, res) => {
+    app.get("/tool/:id/:email",  adminVerify, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await partsCollection.findOne(query);
@@ -213,7 +221,7 @@ async function run() {
       }
     );
     // manageOrders api data
-    app.get("/manageOrders", adminVerify, async (req, res) => {
+    app.get("/manageOrders/:email", adminVerify, async (req, res) => {
       const query = {};
       const result = await ordersCollection.find(query).toArray();
       res.send(result);
@@ -324,6 +332,45 @@ async function run() {
       );
       res.send({ result, token: token });
     });
+
+    //////////////////////////////////////////
+    // bangladesh all area api routes 
+    //  for all divisons 
+    app.get('/db/divisions', async(req,res)=>{
+      const query = {}
+      const cursor = divisionCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    // for districts 
+    app.get('/db/districts/:id', async(req,res)=>{
+      const query = {"division_id": req.params.id}
+      const cursor = districtCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    // for upazilas 
+    app.get('/db/upazilas/:id', async(req,res)=>{
+      const query = {"district_id": req.params.id}
+      const cursor = upazilaCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    // for unions 
+    app.get('/db/unions/:id', async(req,res)=>{
+      const query = {"upazilla_id": req.params.id}
+      const cursor = unionCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    // for unions 
+    app.get('/db/zipcodes/:name', async(req,res)=>{
+      const query = {"upazila": req.params.name}
+      const cursor = zipcodeCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+    /////////////////////////////////////////
   } finally {
     //
   }
