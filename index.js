@@ -336,35 +336,35 @@ async function run() {
     //////////////////////////////////////////
     // bangladesh all area api routes 
     //  for all divisons 
-    app.get('/db/divisions', async(req,res)=>{
+    app.get('/bd/divisions', async(req,res)=>{
       const query = {}
       const cursor = divisionCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     })
     // for districts 
-    app.get('/db/districts/:id', async(req,res)=>{
+    app.get('/bd/districts/:id', async(req,res)=>{
       const query = {"division_id": req.params.id}
       const cursor = districtCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     })
     // for upazilas 
-    app.get('/db/upazilas/:id', async(req,res)=>{
+    app.get('/bd/upazilas/:id', async(req,res)=>{
       const query = {"district_id": req.params.id}
       const cursor = upazilaCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     })
     // for unions 
-    app.get('/db/unions/:id', async(req,res)=>{
+    app.get('/bd/unions/:id', async(req,res)=>{
       const query = {"upazilla_id": req.params.id}
       const cursor = unionCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     })
     // for unions 
-    app.get('/db/zipcodes/:name', async(req,res)=>{
+    app.get('/bd/zipcodes/:name', async(req,res)=>{
       const query = {"upazila": req.params.name}
       const cursor = zipcodeCollection.find(query);
       const result = await cursor.toArray();
